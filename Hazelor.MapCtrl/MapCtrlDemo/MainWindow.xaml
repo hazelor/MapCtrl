@@ -1,8 +1,12 @@
 ﻿<Window x:Class="MapCtrlDemo.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525">
-    <Grid>
-        
+        xmlns:map="clr-namespace:Hazelor.MapCtrl;assembly=Hazelor.MapCtrl"
+        Title="MainWindow" Height="350" Width="525" Loaded="OnLoadMap" Closed="OnCloseMap">
+    <Grid ClipToBounds="True">
+        <map:MapCanvas x:Name="tileCanvas">
+            
+        </map:MapCanvas>
+        <map:NavigationControls Map="{Binding ElementName=tileCanvas}"/>
     </Grid>
 </Window>

@@ -59,7 +59,23 @@ namespace Hazelor.MapCtrl
             CommandManager.RegisterClassCommandBinding(
                 typeof(MapCanvas), new CommandBinding(NavigationCommands.IncreaseZoom, (sender, e) => ((MapCanvas)sender).Zoom++));
         }
+        public MapCanvas()
+        {
+            _offsetX = new MapOffset(_translate.GetType().GetProperty("X"), this.OnOffsetChanged);
+            _offsetY = new MapOffset(_translate.GetType().GetProperty("Y"), this.OnOffsetChanged);
 
+            _tilePanel.RenderTransform = _translate;
+            this.Background = Brushes.Transparent; // Register all mouse clicks
+            this.Children.Add(_cache);
+            this.Children.Add(_tilePanel);
+            this.ClipToBounds = true;
+            this.Focusable = true;
+            this.FocusVisualStyle = null;
+            this.SnapsToDevicePixels = true;
+
+            this.Cursor = Cursors.Arrow;
+
+        }
         public Rect Viewport
         {
             get { return (Rect)this.GetValue(ViewportProperty); }
@@ -269,6 +285,9 @@ namespace Hazelor.MapCtrl
                         x += 10;
                         y += 20;
                     }
+                    Canvas.SetLeft(element, x);
+                    Canvas.SetTop(element, y);
+                    element.RenderTransform = _translate;
                 }
             }
         }
@@ -417,6 +436,18 @@ namespace Hazelor.MapCtrl
             this.Zoom = newZoom; // Set this after we've altered the offsets
             this.EndUpdate();
         }
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+
+            this.BeginUpdate();
+            _offsetX.ChangeSize(sizeInfo.NewSize.Width);
+            _offsetY.ChangeSize(sizeInfo.NewSize.Height);
+            _tilePanel.Width = sizeInfo.NewSize.Width;
+            _tilePanel.Height = sizeInfo.NewSize.Height;
+            this.EndUpdate();
+        }
+
         #endregion
 
         #region MapOffset

@@ -49,6 +49,30 @@ namespace Hazelor.MapCtrl
             set { BitmapStore.CacheFolder = value; }
         }
 
+        public static bool IsDBCaches
+        {
+            get
+            {
+                return BitmapStore.IsDBCaches;
+            }
+            set
+            {
+                BitmapStore.IsDBCaches = value;
+                if (IsDBCaches)
+                {
+                    InitDB();
+                }
+            }
+        }
+
+        public static void DestructMap()
+        {
+            if (IsDBCaches)
+            {
+                BitmapStore.DestructDB();
+            }
+            
+        }
         /// <summary>Gets the number of Tiles requested to be downloaded.</summary>
         /// <remarks>This is not the number of active downloads.</remarks>
         public static int DownloadCount
@@ -56,6 +80,10 @@ namespace Hazelor.MapCtrl
             get { return BitmapStore.DownloadCount; }
         }
 
+        public static void InitDB()
+        {
+            BitmapStore.InitDB();
+        }
         /// <summary>Gets or sets the user agent used to make the tile request.</summary>
         /// <remarks>This should be set before any call to GetTileImage.</remarks>
         public static string UserAgent
