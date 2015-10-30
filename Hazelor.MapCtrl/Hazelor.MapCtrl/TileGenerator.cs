@@ -171,7 +171,7 @@ namespace Hazelor.MapCtrl
         {
             if (string.IsNullOrEmpty(CacheFolder))
             {
-                throw new InvalidOperationException("Must set the CacheFolder before calling GetTileImage.");
+                return null;
             }
 
             double tileCount = Math.Pow(2, zoom) - 1;
