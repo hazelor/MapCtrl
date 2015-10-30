@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Hazelor.MapCtrl
@@ -49,6 +50,11 @@ namespace Hazelor.MapCtrl
             set { BitmapStore.CacheFolder = value; }
         }
 
+        public static ImageSource IBackGround
+        {
+            get;
+            set;
+        }
         public static bool IsDBCaches
         {
             get

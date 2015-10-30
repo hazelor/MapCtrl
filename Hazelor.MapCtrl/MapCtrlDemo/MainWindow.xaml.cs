@@ -3,6 +3,7 @@ using Hazelor.MapCtrl.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -27,6 +28,23 @@ namespace MapCtrlDemo
         public MainWindow()
         {
             TileGenerator.CacheFolder = @"Maps.db";
+            FileStream file = null;
+            string localName = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), @"back1.png");
+            if(File.Exists(localName))
+            {
+                file = File.OpenRead(localName);
+                var bitmap = new BitmapImage();
+
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.StreamSource = file;
+                bitmap.EndInit();
+
+                bitmap.Freeze();
+                TileGenerator.IBackGround = bitmap;
+            }
+            
+
             TileGenerator.IsDBCaches = true;
             TileGenerator.DownloadCountChanged += this.OnDownloadCountChanged;
             TileGenerator.DownloadError += this.OnDownloadError;
@@ -81,6 +99,23 @@ namespace MapCtrlDemo
         private void Button_Click2(object sender, RoutedEventArgs e)
         {
             this.tileCanvas.DelSubObject("test");
+
+            string localName = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), @"back2.png");
+            if (File.Exists(localName))
+            {
+                FileStream file = null;
+                file = File.OpenRead(localName);
+                var bitmap = new BitmapImage();
+
+                bitmap.BeginInit();
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.StreamSource = file;
+                bitmap.EndInit();
+
+                bitmap.Freeze();
+                TileGenerator.IBackGround = bitmap;
+            }
+            this.tileCanvas.SetBackGround();
             //n.longtitude += 0.1;
             //n.latitude += 0.1;
             //sign s = new sign();

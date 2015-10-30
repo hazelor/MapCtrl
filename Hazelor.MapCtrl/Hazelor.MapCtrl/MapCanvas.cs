@@ -69,13 +69,15 @@ namespace Hazelor.MapCtrl
             CommandManager.RegisterClassCommandBinding(
                 typeof(MapCanvas), new CommandBinding(NavigationCommands.IncreaseZoom, (sender, e) => ((MapCanvas)sender).Zoom++));
         }
+
+        
         public MapCanvas()
         {
             _offsetX = new MapOffset(_translate.GetType().GetProperty("X"), this.OnOffsetChanged);
             _offsetY = new MapOffset(_translate.GetType().GetProperty("Y"), this.OnOffsetChanged);
 
             _tilePanel.RenderTransform = _translate;
-            this.Background = Brushes.Transparent; // Register all mouse clicks
+            this.Background = new ImageBrush(TileGenerator.IBackGround); // Register all mouse clicks
             this.Children.Add(_cache);
             this.Children.Add(_tilePanel);
             this.ClipToBounds = true;
@@ -85,6 +87,11 @@ namespace Hazelor.MapCtrl
 
             this.Cursor = Cursors.Arrow;
 
+        }
+
+        public void SetBackGround()
+        {
+            this.Background = new ImageBrush(TileGenerator.IBackGround);
         }
         public Rect Viewport
         {

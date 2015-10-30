@@ -9,6 +9,7 @@
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
         <map:MapCanvas Grid.Row="0" x:Name="tileCanvas">
+            <Border map:MapCanvas.Latitude="44"/>
             
         </map:MapCanvas>
         <map:NavigationControls Grid.Row="0" Map="{Binding ElementName=tileCanvas}"/>
