@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Hazelor.MapCtrl
@@ -49,6 +50,35 @@ namespace Hazelor.MapCtrl
             set { BitmapStore.CacheFolder = value; }
         }
 
+        public static ImageSource IBackGround
+        {
+            get;
+            set;
+        }
+        public static bool IsDBCaches
+        {
+            get
+            {
+                return BitmapStore.IsDBCaches;
+            }
+            set
+            {
+                BitmapStore.IsDBCaches = value;
+                if (IsDBCaches)
+                {
+                    InitDB();
+                }
+            }
+        }
+
+        public static void DestructMap()
+        {
+            if (IsDBCaches)
+            {
+                BitmapStore.DestructDB();
+            }
+            
+        }
         /// <summary>Gets the number of Tiles requested to be downloaded.</summary>
         /// <remarks>This is not the number of active downloads.</remarks>
         public static int DownloadCount
@@ -56,6 +86,10 @@ namespace Hazelor.MapCtrl
             get { return BitmapStore.DownloadCount; }
         }
 
+        public static void InitDB()
+        {
+            BitmapStore.InitDB();
+        }
         /// <summary>Gets or sets the user agent used to make the tile request.</summary>
         /// <remarks>This should be set before any call to GetTileImage.</remarks>
         public static string UserAgent
@@ -143,7 +177,7 @@ namespace Hazelor.MapCtrl
         {
             if (string.IsNullOrEmpty(CacheFolder))
             {
-                throw new InvalidOperationException("Must set the CacheFolder before calling GetTileImage.");
+                return null;
             }
 
             double tileCount = Math.Pow(2, zoom) - 1;

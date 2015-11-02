@@ -31,6 +31,7 @@ namespace Hazelor.MapCtrl
         /// <remarks>This must be set before any call to GetTileImage.</remarks>
         public static string CacheFolder { get; set; }
 
+        public static bool IsDBCaches { get; set; }
         /// <summary>Gets the number of Tiles requested to be downloaded.</summary>
         /// <remarks>This is not the number of active downloads.</remarks>
         public static int DownloadCount
@@ -42,6 +43,15 @@ namespace Hazelor.MapCtrl
         /// <remarks>This should be set before any call to GetTileImage.</remarks>
         public static string UserAgent { get; set; }
 
+        public static void InitDB()
+        {
+            SQLiteDBStore.InitDB(CacheFolder);
+        }
+
+        public static void DestructDB()
+        {
+            SQLiteDBStore.DestructDB();
+        }
         /// <summary>
         /// Retreieves the image for the specified uri, using the cache if
         /// available.
@@ -54,8 +64,30 @@ namespace Hazelor.MapCtrl
         {
             // Since this is an internal class we don't need to validate the arguments.
             System.Diagnostics.Debug.Assert(!string.IsNullOrEmpty(CacheFolder), "Must set the CacheFolder before calling GetImage.");
+            System.Diagnostics.Debug.Assert(IsDBCaches != null, "Must set the IsDBCaches before calling GetImage.");
             System.Diagnostics.Debug.Assert(uri != null, "Cannot pass in null values.");
 
+            BitmapImage img = null;
+            if (IsDBCaches)
+            {
+                img = GetImageFromDB(uri);
+            }
+            else
+            {
+                img = GetImageFromFile(uri);
+            }
+
+            if (img == null)
+	        {
+                img = DownloadBitmap(uri);
+	        }
+            return img;
+            
+
+        }
+
+        private static BitmapImage GetImageFromFile(Uri uri)
+        {
             string localName = GetCacheFileName(uri);
             if (File.Exists(localName))
             {
@@ -79,11 +111,13 @@ namespace Hazelor.MapCtrl
                     }
                 }
             }
-
-            // We don't have it in cache of the copy in cache is corrupted. Either
-            // way we need download the file.
-            //return DownloadBitmap(uri);
             return null;
+        }
+
+        private static BitmapImage GetImageFromDB(Uri uri)
+        {
+            
+            return SQLiteDBStore.GetImage(uri);
         }
 
         private static void BeginDownload()
@@ -106,7 +140,7 @@ namespace Hazelor.MapCtrl
             {
                 // First download the image to our memory.
                 var request = (HttpWebRequest)WebRequest.Create(uri);
-                request.Timeout = 2000;
+                //request.Timeout = 2000;
                 request.UserAgent = UserAgent;
 
                 buffer = new MemoryStream();
@@ -172,7 +206,20 @@ namespace Hazelor.MapCtrl
             return bitmap;
         }
 
+        //保存成文件形式
         private static void SaveCacheImage(Stream stream, Uri uri)
+        {
+            if (IsDBCaches)
+            {
+                SaveCacheImageDB(stream, uri);
+            }
+            else
+            {
+                SaveCacheImageFile(stream, uri);
+            }
+        }
+
+        private static void SaveCacheImageFile(Stream stream, Uri uri)
         {
             string path = GetCacheFileName(uri);
             FileStream file = null;
@@ -195,6 +242,21 @@ namespace Hazelor.MapCtrl
                     file.Dispose();
                 }
             }
+        }
+
+        private static void SaveCacheImageDB(Stream stream, Uri uri)
+        {
+            try
+            {
+                //SQLiteDBStore.CreateDB(CacheFolder);
+                SQLiteDBStore.SaveTile(stream, uri);
+            }
+            catch (Exception) //cannot save the file into db
+            {
+                
+                
+            }
+            
         }
 
         private static void RaiseDownloadCountChanged()

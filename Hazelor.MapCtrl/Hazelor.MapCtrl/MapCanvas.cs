@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Hazelor.MapCtrl.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -6,6 +7,7 @@ using System.Text;
 using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -21,6 +23,14 @@ namespace Hazelor.MapCtrl
         /// <summary>Identifies the Longitude attached property.</summary>
         public static readonly DependencyProperty LongitudeProperty =
             DependencyProperty.RegisterAttached("Longitude", typeof(double), typeof(MapCanvas), new PropertyMetadata(double.PositiveInfinity, OnLatitudeLongitudePropertyChanged));
+
+        public static readonly DependencyProperty EndLatitudeProperty =
+           DependencyProperty.RegisterAttached("EndLatitude", typeof(double), typeof(MapCanvas), new PropertyMetadata(double.PositiveInfinity, OnLatitudeLongitudePropertyChanged));
+
+        /// <summary>Identifies the Longitude attached property.</summary>
+        public static readonly DependencyProperty EndLongitudeProperty =
+            DependencyProperty.RegisterAttached("EndLongitude", typeof(double), typeof(MapCanvas), new PropertyMetadata(double.PositiveInfinity, OnLatitudeLongitudePropertyChanged));
+
 
         /// <summary>Identifies the Viewport dependency property.</summary>
         public static readonly DependencyProperty ViewportProperty;
@@ -60,6 +70,29 @@ namespace Hazelor.MapCtrl
                 typeof(MapCanvas), new CommandBinding(NavigationCommands.IncreaseZoom, (sender, e) => ((MapCanvas)sender).Zoom++));
         }
 
+        
+        public MapCanvas()
+        {
+            _offsetX = new MapOffset(_translate.GetType().GetProperty("X"), this.OnOffsetChanged);
+            _offsetY = new MapOffset(_translate.GetType().GetProperty("Y"), this.OnOffsetChanged);
+
+            _tilePanel.RenderTransform = _translate;
+            this.Background = new ImageBrush(TileGenerator.IBackGround); // Register all mouse clicks
+            this.Children.Add(_cache);
+            this.Children.Add(_tilePanel);
+            this.ClipToBounds = true;
+            this.Focusable = true;
+            this.FocusVisualStyle = null;
+            this.SnapsToDevicePixels = true;
+
+            this.Cursor = Cursors.Arrow;
+
+        }
+
+        public void SetBackGround()
+        {
+            this.Background = new ImageBrush(TileGenerator.IBackGround);
+        }
         public Rect Viewport
         {
             get { return (Rect)this.GetValue(ViewportProperty); }
@@ -91,6 +124,17 @@ namespace Hazelor.MapCtrl
             return (double)obj.GetValue(LatitudeProperty);
         }
 
+        /// <summary>
+        /// 获取EndLatitude的value,为Line类型obj提供
+        /// </summary>
+        /// <param name="obj">Line类型的输入对象</param>
+        /// <returns>The EndLatitude coordinate of the specified element.</returns>
+        public static double GetEndLatitude(DependencyObject obj)
+        {
+
+            return (double)obj.GetValue(EndLatitudeProperty);
+        }
+
         /// <summary>Gets the value of the Longitude attached property for a given depencency object.</summary>
         /// <param name="obj">The element from which the property value is read.</param>
         /// <returns>The Longitude coordinate of the specified element.</returns>
@@ -98,6 +142,17 @@ namespace Hazelor.MapCtrl
         {
             
             return (double)obj.GetValue(LongitudeProperty);
+        }
+
+        /// <summary>
+        /// 获取EndLongitude的value,为Line类型obj提供
+        /// </summary>
+        /// <param name="obj">Line类型的输入对象</param>
+        /// <returns>The EndLatitude coordinate of the specified element.</returns>
+        public static double GetEndLongitude(DependencyObject obj)
+        {
+
+            return (double)obj.GetValue(EndLongitudeProperty);
         }
 
         /// <summary>Sets the value of the Latitude attached property for a given depencency object.</summary>
@@ -108,12 +163,29 @@ namespace Hazelor.MapCtrl
             obj.SetValue(LatitudeProperty, value);
         }
 
+        /// <summary>Sets the value of the EndLatitude attached property for a given depencency object.</summary>
+        /// <param name="obj">The element to which the property value is written.</param>
+        /// <param name="value">Sets the EndLatitude coordinate of the specified element.</param>
+        public static void SetEndLatitude(DependencyObject obj, double value)
+        {
+            obj.SetValue(EndLatitudeProperty, value);
+        }
+
+
         /// <summary>Sets the value of the Longitude attached property for a given depencency object.</summary>
         /// <param name="obj">The element to which the property value is written.</param>
         /// <param name="value">Sets the Longitude coordinate of the specified element.</param>
         public static void SetLongitude(DependencyObject obj, double value)
         {
             obj.SetValue(LongitudeProperty, value);
+        }
+
+        /// <summary>Sets the value of the EndLongitude attached property for a given depencency object.</summary>
+        /// <param name="obj">The element to which the property value is written.</param>
+        /// <param name="value">Sets the EndLongitude coordinate of the specified element.</param>
+        public static void SetEndLongitude(DependencyObject obj, double value)
+        {
+            obj.SetValue(EndLongitudeProperty, value);
         }
 
 
@@ -264,10 +336,20 @@ namespace Hazelor.MapCtrl
                 {
                     double x = (TileGenerator.GetTileX(longitude, this.Zoom) - _offsetX.Tile) * TileGenerator.TileSize;
                     double y = (TileGenerator.GetTileY(latitude, this.Zoom) - _offsetY.Tile) * TileGenerator.TileSize;
-                    if (element.GetType() == typeof(Border))
+                    Canvas.SetLeft(element, x);
+                    Canvas.SetTop(element, y);
+                    element.RenderTransform = _translate;
+
+                    //for line type object
+                    double endlatitude = GetEndLatitude(element);
+                    double endlongitude = GetEndLongitude(element);
+                    ILineElement eline = element as ILineElement;
+                    if (endlatitude != double.PositiveInfinity && endlongitude != double.PositiveInfinity && eline!=null)
                     {
-                        x += 10;
-                        y += 20;
+                        Point startpos = this.ConverterPosition(new Point { X = longitude, Y = latitude });
+                        Point endpos = this.ConverterPosition(new Point { X = endlongitude, Y = endlatitude });
+                        eline.LineObject.X2 = endpos.X - startpos.X;
+                        eline.LineObject.Y2 = endpos.Y - startpos.Y;
                     }
                 }
             }
@@ -416,6 +498,120 @@ namespace Hazelor.MapCtrl
             _offsetY.ChangeZoom(newZoom, mouse.Y);
             this.Zoom = newZoom; // Set this after we've altered the offsets
             this.EndUpdate();
+        }
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+
+            this.BeginUpdate();
+            _offsetX.ChangeSize(sizeInfo.NewSize.Width);
+            _offsetY.ChangeSize(sizeInfo.NewSize.Height);
+            _tilePanel.Width = sizeInfo.NewSize.Width;
+            _tilePanel.Height = sizeInfo.NewSize.Height;
+            this.EndUpdate();
+        }
+
+        #endregion
+
+        #region common methods
+
+        /// <summary>
+        ///     双击事件句柄，当在地图上左键双击时响应执行
+        /// </summary>
+        public event EventHandler<MapEventArgs> DoubleLeftClickedHandler;
+
+        /// <summary>
+        ///     双击事件句柄,当在地图上右键双击时响应执行
+        /// </summary>
+        public event EventHandler<MapEventArgs> DoubleRightClickedHandler;
+        #endregion
+
+        #region Single Object
+        /// <summary>
+        ///     添加单一图标
+        /// </summary>
+        /// <param name="key">控件名称,用于索引控件</param>
+        /// <param name="obj">添加的图标控件</param>
+        /// <param name="dataContext">空间DataContext,用于提供地图上显示的坐标信息及其他</param>
+        public void AddSingleObject(string key, FrameworkElement obj, ISingleObjectContext dataContext)
+        {
+            System.Diagnostics.Debug.Assert(dataContext != null, "Cannot pass in null values.");
+            System.Diagnostics.Debug.Assert(obj != null, "Cannot pass in null values.");
+            System.Diagnostics.Debug.Assert(key != null, "Cannot pass in null values.");
+
+            obj.Name = key;
+            obj.DataContext = dataContext;
+            this.Children.Add(obj);
+
+            Binding LatitudeBind = new Binding();
+            LatitudeBind.Source = dataContext;
+            LatitudeBind.Path = new PropertyPath("Latitude");
+            LatitudeBind.Mode = BindingMode.TwoWay;
+            obj.SetBinding(MapCanvas.LatitudeProperty, LatitudeBind);
+            Binding LongitudeBind = new Binding();
+            LongitudeBind.Source = dataContext;
+            LongitudeBind.Path = new PropertyPath("Longitude");
+            LongitudeBind.Mode = BindingMode.TwoWay;
+            obj.SetBinding(MapCanvas.LongitudeProperty, LongitudeBind);
+            
+            
+        }
+
+        /// <summary>
+        ///     添加Line图标
+        /// </summary>
+        /// <param name="key">控件名称，用于索引控件</param>
+        /// <param name="obj">添加的Line控件</param>
+        /// <param name="dataContext">DataContext,用于提供地图上显示的坐标信息及其他</param>
+        public void AddLineObject(string key, FrameworkElement obj, ILineOjbectContext dataContext)
+        {
+            System.Diagnostics.Debug.Assert(dataContext != null, "Cannot pass in null values.");
+            System.Diagnostics.Debug.Assert(obj != null, "Cannot pass in null values.");
+            System.Diagnostics.Debug.Assert(key != null, "Cannot pass in null values.");
+
+            obj.Name = key;
+            obj.DataContext = dataContext;
+            this.Children.Add(obj);
+
+            Binding LatitudeBind = new Binding();
+            LatitudeBind.Source = dataContext;
+            LatitudeBind.Path = new PropertyPath("Latitude");
+            LatitudeBind.Mode = BindingMode.TwoWay;
+            obj.SetBinding(MapCanvas.LatitudeProperty, LatitudeBind);
+            Binding LongitudeBind = new Binding();
+            LongitudeBind.Source = dataContext;
+            LongitudeBind.Path = new PropertyPath("Longitude");
+            LongitudeBind.Mode = BindingMode.TwoWay;
+            obj.SetBinding(MapCanvas.LongitudeProperty, LongitudeBind);
+
+            Binding EndLatitudeBind = new Binding();
+            EndLatitudeBind.Source = dataContext;
+            EndLatitudeBind.Path = new PropertyPath("EndLatitude");
+            EndLatitudeBind.Mode = BindingMode.TwoWay;
+            obj.SetBinding(MapCanvas.EndLatitudeProperty, EndLatitudeBind);
+            Binding EndLongitudeBind = new Binding();
+            EndLongitudeBind.Source = dataContext;
+            EndLongitudeBind.Path = new PropertyPath("EndLongitude");
+            EndLongitudeBind.Mode = BindingMode.TwoWay;
+            obj.SetBinding(MapCanvas.EndLongitudeProperty, EndLongitudeBind);
+        }
+
+        /// <summary>
+        /// 删除添加的子控件
+        /// </summary>
+        /// <param name="key">子控件的名称</param>
+        public void DelSubObject(string key)
+        {
+            System.Diagnostics.Debug.Assert(key != null, "Cannot pass in null values.");
+            for (int i = 0; i < this.Children.Count; i++)
+            {
+                FrameworkElement f = this.Children[i] as FrameworkElement;
+                if (f!=null && f.Name == key)
+                {
+                    this.Children.RemoveAt(i);
+                    return;
+                }
+            }
         }
         #endregion
 
@@ -598,7 +794,7 @@ namespace Hazelor.MapCtrl
                     _animating = _value < _target; // Stop animating once we've reached/exceeded the target
                 }
             }
-
+           
 
         }
         #endregion

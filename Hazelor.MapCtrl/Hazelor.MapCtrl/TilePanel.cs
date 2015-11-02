@@ -185,7 +185,7 @@ namespace Hazelor.MapCtrl
             {
                 for (int y = -1; y < _rows; ++y)
                 {
-                    Tile tile = new Tile(this.Zoom, this.LeftTile + x, this.TopTile + y);
+                    Tile tile = new Tile(this.Zoom, this.LeftTile + x, this.TopTile + y, TileGenerator.IBackGround);
                     tile.Column = x;
                     tile.Row = y;
                     Canvas.SetLeft(tile, TileGenerator.TileSize * x);

@@ -20,8 +20,12 @@ namespace Hazelor.MapCtrl
         /// <param name="zoom">The zoom level for the tile.</param>
         /// <param name="x">The tile index along the X axis.</param>
         /// <param name="y">The tile index along the Y axis.</param>
-        public Tile(int zoom, int x, int y)
+        public Tile(int zoom, int x, int y, ImageSource background = null)
         {
+            if (background != null)
+            {
+                this.Source = background;
+            }
             _tileX = x;
             _tileY = y;
             _zoom = zoom;
